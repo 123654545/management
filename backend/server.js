@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url'
 import authRoutes from './routes/auth.js'
 import contractRoutes from './routes/contracts.js'
 import analysisRoutes from './routes/analysis.js'
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
 // 配置环境变量
 dotenv.config()
@@ -68,16 +69,11 @@ app.use('*', (req, res) => {
   })
 })
 
-// 全局错误处理
-app.use((error, req, res, next) => {
-  console.error('服务器错误:', error)
-  
-  res.status(error.status || 500).json({
-    success: false,
-    message: error.message || '服务器内部错误',
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-  })
-})
+// 全局错误处理（使用新的错误处理器）
+app.use(errorHandler)
+
+// 404 处理
+app.use(notFoundHandler)
 
 // 启动服务器
 app.listen(PORT, () => {
