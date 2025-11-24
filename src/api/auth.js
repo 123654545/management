@@ -1,0 +1,73 @@
+import request from './request'
+
+export const authApi = {
+  // 用户登录 - 使用自定义后端
+  login: async (email, password) => {
+    try {
+      const response = await request.post('/auth/login', { email, password })
+      
+      // 将用户信息和 token 存储到 localStorage
+      if (response.token) {
+        localStorage.setItem('token', response.token)
+        localStorage.setItem('user', JSON.stringify(response.user))
+      }
+      
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // 用户注册 - 使用自定义后端
+  register: async (email, password) => {
+    try {
+      const response = await request.post('/auth/register', { 
+        email, 
+        password, 
+        confirmPassword: password 
+      })
+      
+      // 将用户信息和 token 存储到 localStorage
+      if (response.token) {
+        localStorage.setItem('token', response.token)
+        localStorage.setItem('user', JSON.stringify(response.user))
+      }
+      
+      return response
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // 获取用户信息 - 使用自定义后端
+  getUserInfo: async () => {
+    try {
+      return await request.get('/auth/verify')
+    } catch (error) {
+      throw error
+    }
+  },
+
+  // 用户登出 - 使用自定义后端
+  logout: async () => {
+    try {
+      // 可以选择调用后端登出接口，或者直接清除本地存储
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    } catch (error) {
+      // 即使登出失败，也清除本地存储
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+    }
+  },
+
+  // 更新用户资料 - 保留原有逻辑
+  updateProfile: async (data) => {
+    return request.put('/auth/profile', data)
+  },
+
+  // 修改密码 - 保留原有逻辑
+  changePassword: async (oldPassword, newPassword) => {
+    return request.post('/auth/change-password', { oldPassword, newPassword })
+  }
+}

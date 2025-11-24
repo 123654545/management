@@ -1,0 +1,172 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { contractApi } from '@/api/contract'
+
+export const useContractStore = defineStore('contract', () => {
+  // 状态
+  const contracts = ref([])
+  const currentContract = ref(null)
+  const currentAnalysis = ref(null)
+  const loading = ref(false)
+  const uploading = ref(false)
+  const analyzing = ref(false)
+
+  // 计算属性
+  const contractsCount = computed(() => contracts.value.length)
+  
+  const recentContracts = computed(() => 
+    contracts.value
+      .sort((a, b) => new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime())
+      .slice(0, 6)
+  )
+
+  // 方法
+  const fetchContracts = async () => {
+    try {
+      loading.value = true
+      const response = await contractApi.getContracts()
+      contracts.value = response.contracts || []
+      return response
+    } catch (error) {
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const uploadContract = async (file) => {
+    try {
+      uploading.value = true
+      const response = await contractApi.uploadContract(file)
+      
+      // 添加到列表
+      contracts.value.unshift(response)
+      
+      return response
+    } catch (error) {
+      throw error
+    } finally {
+      uploading.value = false
+    }
+  }
+
+  const getContract = async (id) => {
+    try {
+      loading.value = true
+
+      
+      const [contract, analysis] = await Promise.all([
+        contractApi.getContract(id),
+        contractApi.getContractAnalysis(id)
+      ])
+      
+
+      
+      currentContract.value = contract
+      currentAnalysis.value = analysis
+      
+      return { contract, analysis }
+    } catch (error) {
+      console.error('获取合同详情失败:', error) // 调试日志
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const updateContract = async (id, data) => {
+    try {
+      loading.value = true
+      const updatedContract = await contractApi.updateContract(id, data)
+      
+      // 更新列表中的合同
+      const index = contracts.value.findIndex(c => c.id === id)
+      if (index !== -1) {
+        contracts.value[index] = updatedContract
+      }
+      
+      // 更新当前合同
+      if (currentContract.value?.id === id) {
+        currentContract.value = updatedContract
+      }
+      
+      return updatedContract
+    } catch (error) {
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const deleteContract = async (id) => {
+    try {
+      loading.value = true
+      await contractApi.deleteContract(id)
+      
+      // 从列表中移除
+      contracts.value = contracts.value.filter(c => c.id !== id)
+      
+      // 清空当前合同和分析结果
+      if (currentContract.value?.id === id) {
+        currentContract.value = null
+        currentAnalysis.value = null
+      }
+    } catch (error) {
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const analyzeContract = async (id) => {
+    try {
+      analyzing.value = true
+      const analysis = await contractApi.analyzeContract(id)
+      
+      if (currentContract.value?.id === id) {
+        currentAnalysis.value = analysis
+      }
+      
+      return analysis
+    } catch (error) {
+      throw error
+    } finally {
+      analyzing.value = false
+    }
+  }
+
+  const retryAnalysis = async (id) => {
+    try {
+      await analyzeContract(id)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  const clearCurrent = () => {
+    currentContract.value = null
+    currentAnalysis.value = null
+  }
+
+  return {
+    // 状态
+    contracts,
+    currentContract,
+    currentAnalysis,
+    loading,
+    uploading,
+    analyzing,
+    // 计算属性
+    contractsCount,
+    recentContracts,
+    // 方法
+    fetchContracts,
+    uploadContract,
+    getContract,
+    updateContract,
+    deleteContract,
+    analyzeContract,
+    retryAnalysis,
+    clearCurrent
+  }
+})

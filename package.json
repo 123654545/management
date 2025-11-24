@@ -1,0 +1,33 @@
+{
+  "name": "contract-management-system",
+  "version": "1.0.0",
+  "description": "智能合同管理系统 MVP",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@supabase/supabase-js": "^2.83.0",
+    "axios": "^1.6.0",
+    "element-plus": "^2.4.4",
+    "ics": "^3.0.1",
+    "pdf-lib": "^1.17.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-router": "^4.2.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.5.0",
+    "@vue/eslint-config-prettier": "^8.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.19.2",
+    "prettier": "^3.1.0",
+    "unplugin-auto-import": "^0.17.2",
+    "unplugin-vue-components": "^0.25.2",
+    "vite": "^5.0.0"
+  }
+}
