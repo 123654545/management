@@ -237,7 +237,7 @@ const editTitle = ref('')
 
 // 计算属性
 const currentAnalysis = computed(() => contractStore.currentAnalysis)
-const analysisStatus = computed(() => currentAnalysis.value?.status || 'pending')
+const analysisStatus = computed(() => currentAnalysis.value?.analysis_status || 'pending')
 
 // 页面初始化
 onMounted(async () => {

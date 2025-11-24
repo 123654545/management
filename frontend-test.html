@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合同分析测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>合同分析系统测试</h1>
+    
+    <div class="section">
+        <h3>1. API连接测试</h3>
+        <button onclick="testAPI()">测试后端连接</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. 获取合同列表</h3>
+        <button onclick="getContracts()">获取合同列表</button>
+        <div id="contracts-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>3. 触发合同分析</h3>
+        <button onclick="analyzeContract()">分析第一个合同</button>
+        <div id="analysis-result"></div>
+    </div>
+
+    <div class="section">
+        <h3>4. 检查分析结果</h3>
+        <button onclick="checkAnalysis()">检查分析状态</button>
+        <div id="status-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let currentContractId = null;
+        let authToken = null;
+
+        // 模拟登录获取token
+        async function login() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    authToken = data.token;
+                    localStorage.setItem('authToken', authToken);
+                    return true;
+                }
+            } catch (error) {
+                console.error('Login failed:', error);
+            }
+            return false;
+        }
+
+        async function makeRequest(url, options = {}) {
+            if (!authToken) {
+                await login();
+            }
+            
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                }
+            };
+            
+            return fetch(url, { ...defaultOptions, ...options });
+        }
+
+        async function testAPI() {
+            const result = document.getElementById('api-result');
+            result.innerHTML = '<div class="loading">测试中...</div>';
+            
+            try {
+                const response = await makeRequest(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="success">✅ API连接正常<br>${JSON.stringify(data, null, 2)}</div>`;
+                } else {
+                    result.innerHTML = `<div class="error">❌ API连接失败: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ 连接错误: ${error.message}</div>`;
+            }
+        }
+
+        async function getContracts() {
+            const result = document.getElementById('contracts-result');
+            result.innerHTML = '<div class="loading">获取中...</div>';
+            
+            try {
+                const response = await makeRequest(`${API_BASE}/contracts`);
+                const data = await response.json();
+                
+                if (response.ok && data.contracts) {
+                    currentContractId = data.contracts[0]?.id;
+                    result.innerHTML = `<div class="success">✅ 获取成功<br>找到 ${data.contracts.length} 个合同<br>当前选择: ${data.contracts[0]?.title || '无'}<pre>${JSON.stringify(data.contracts[0], null, 2)}</pre></div>`;
+                } else {
+                    result.innerHTML = `<div class="error">❌ 获取失败: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ 请求错误: ${error.message}</div>`;
+            }
+        }
+
+        async function analyzeContract() {
+            const result = document.getElementById('analysis-result');
+            if (!currentContractId) {
+                result.innerHTML = '<div class="error">❌ 请先获取合同列表</div>';
+                return;
+            }
+            
+            result.innerHTML = '<div class="loading">分析中，请稍候...</div>';
+            
+            try {
+                const response = await makeRequest(`${API_BASE}/analysis/contract/${currentContractId}/analyze`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.innerHTML = `<div class="success">✅ 分析任务已启动<br>${data.message}<pre>${JSON.stringify(data.data, null, 2)}</pre></div>`;
+                    
+                    // 5秒后自动检查状态
+                    setTimeout(checkAnalysis, 5000);
+                } else {
+                    result.innerHTML = `<div class="error">❌ 分析启动失败: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ 请求错误: ${error.message}</div>`;
+            }
+        }
+
+        async function checkAnalysis() {
+            const result = document.getElementById('status-result');
+            if (!currentContractId) {
+                result.innerHTML = '<div class="error">❌ 请先获取合同列表</div>';
+                return;
+            }
+            
+            result.innerHTML = '<div class="loading">检查中...</div>';
+            
+            try {
+                const response = await makeRequest(`${API_BASE}/analysis/contract/${currentContractId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const analysis = data.data;
+                    let statusClass = analysis.analysis_status === 'completed' ? 'success' : 
+                                     analysis.analysis_status === 'failed' ? 'error' : 'loading';
+                    
+                    let content = `<div class="${statusClass}">
+                        状态: ${analysis.analysis_status}<br>
+                        错误信息: ${analysis.error_message || '无'}<br>
+                        关键条款数: ${analysis.key_terms?.length || 0}<br>
+                        风险点数: ${analysis.risk_points?.length || 0}<br>
+                        关键日期数: ${analysis.key_dates?.length || 0}
+                    </div>`;
+                    
+                    if (analysis.analysis_status === 'completed' && analysis.key_terms?.length > 0) {
+                        content += '<pre>' + JSON.stringify(analysis, null, 2) + '</pre>';
+                    }
+                    
+                    result.innerHTML = content;
+                } else {
+                    result.innerHTML = `<div class="error">❌ 检查失败: ${data.message}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ 请求错误: ${error.message}</div>`;
+            }
+        }
+
+        // 页面加载时自动测试API
+        window.onload = () => testAPI();
+    </script>
+</body>
+</html>

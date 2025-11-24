@@ -357,23 +357,17 @@ router.post('/contract/:contractId/analyze', authenticateToken, asyncHandler(asy
       const analysisTime = Date.now() - startTime
       console.log(`合同 ${contractId} 分析完成，耗时 ${analysisTime}ms`)
 
-      try {
-        if (result.success && result.data) {
-          const updateData = {
-            key_terms: result.data.key_terms || [],
-            risk_points: result.data.risk_points || [],
-            key_dates: result.data.key_dates || [],
-            summary: result.data.summary || {},
-            analysis_status: 'completed',
-            analyzed_at: new Date().toISOString(),
-            completed_at: new Date().toISOString(),
-            error_message: null,
-            ai_model: result.metadata?.model || 'unknown',
-            confidence_score: result.metadata?.confidence || null,
-            analysis_method: result.metadata?.analysis_method || 'unknown',
-            analysis_time_ms: analysisTime,
-            metadata: result.metadata
-          }
+        try {
+          if (result.success && result.data) {
+            const updateData = {
+              key_terms: result.data.key_terms || [],
+              risk_points: result.data.risk_points || [],
+              key_dates: result.data.key_dates || [],
+              analysis_status: 'completed',
+              analyzed_at: new Date().toISOString(),
+              completed_at: new Date().toISOString(),
+              error_message: null
+            }
 
           const { error: saveError } = await supabase
             .from('contract_analyses')

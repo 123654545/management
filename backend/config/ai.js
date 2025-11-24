@@ -1,6 +1,10 @@
 import axios from 'axios'
+import dotenv from 'dotenv'
 import { deepseekCircuitBreaker, deepseekRetryHandler, healthMonitor } from '../middleware/circuitBreaker.js'
 import { ExternalServiceError } from '../middleware/errorHandler.js'
+
+// 加载环境变量
+dotenv.config()
 
 /**
  * DeepSeek API 集成类
@@ -8,8 +12,8 @@ import { ExternalServiceError } from '../middleware/errorHandler.js'
  */
 export class DeepSeekAPI {
   constructor() {
-    this.apiKey = process.env.VITE_DEEPSEEK_API_KEY
-    this.baseURL = process.env.VITE_DEEPSEEK_API_URL || 'https://api.deepseek.com/v1'
+    this.apiKey = process.env.DEEPSEEK_API_KEY
+    this.baseURL = process.env.DEEPSEEK_API_URL || 'https://api.deepseek.com/v1'
     
     if (!this.apiKey) {
       console.warn('DeepSeek API Key 未配置，将使用模拟分析')
