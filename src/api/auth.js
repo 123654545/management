@@ -69,5 +69,20 @@ export const authApi = {
   // 修改密码 - 保留原有逻辑
   changePassword: async (oldPassword, newPassword) => {
     return request.post('/auth/change-password', { oldPassword, newPassword })
+  },
+
+  // 发送重置密码邮件
+  forgotPassword: async (email) => {
+    return request.post('/auth/forgot-password', { email })
+  },
+
+  // 验证重置密码令牌
+  verifyResetToken: async (token) => {
+    return request.post('/auth/verify-reset-token', { token })
+  },
+
+  // 重置密码
+  resetPassword: async (token, newPassword) => {
+    return request.post('/auth/reset-password', { token, newPassword })
   }
 }

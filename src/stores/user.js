@@ -73,6 +73,30 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 发送重置密码邮件
+  const forgotPassword = async (email) => {
+    try {
+      loading.value = true
+      return await authApi.forgotPassword(email)
+    } catch (error) {
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 重置密码
+  const resetPassword = async (token, newPassword) => {
+    try {
+      loading.value = true
+      return await authApi.resetPassword(token, newPassword)
+    } catch (error) {
+      throw error
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // 状态
     user,
@@ -85,6 +109,8 @@ export const useUserStore = defineStore('user', () => {
     register,
     logout,
     getUserInfo,
-    updateProfile
+    updateProfile,
+    forgotPassword,
+    resetPassword
   }
 })
