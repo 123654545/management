@@ -57,31 +57,90 @@ async function simulateAnalysis(text) {
   if (text.includes('自动续约') || text.toLowerCase().includes('auto-renew')) {
     riskPoints.push({
       risk: '自动续约风险',
-      description: '合同可能自动续约，需注意取消条款',
+      description: '合同包含自动续约条款，如果不主动取消将在到期后自动延续，可能导致不必要的合同义务延续',
       level: 'medium',
-      suggestion: '建议在合同到期前30天发送书面通知终止续约',
+      suggestion: '建议在合同到期前30-60天发送书面通知明确表示不续约，并保留发送凭证。同时可以在合同谈判时要求取消自动续约条款或缩短通知期限。',
       confidence: 0.75,
-      related_clause: '自动续约条款'
+      related_clause: '自动续约条款',
+      legal_basis: '《合同法》第46条规定，当事人对合同期限约定不明确的，视为不定期合同',
+      impact_level: '一般'
     })
   }
   if (text.includes('违约金') || text.toLowerCase().includes('penalty')) {
     riskPoints.push({
       risk: '高额违约金',
-      description: '违约金比例较高，请谨慎履约',
+      description: '合同约定的违约金比例过高，超过合理范围，可能造成过大经济负担',
       level: 'high',
-      suggestion: '严格按照合同约定履行义务，避免违约情况发生',
+      suggestion: '建议协商降低违约金比例至合同总金额的20%以内，或设置违约金上限。如无法修改，应严格履行合同义务避免违约。',
       confidence: 0.8,
-      related_clause: '违约责任条款'
+      related_clause: '违约责任条款',
+      legal_basis: '《合同法》第114条规定，约定的违约金过分高于造成的损失的，当事人可以请求人民法院予以适当减少',
+      impact_level: '严重'
     })
   }
   if (text.includes('独家') || text.toLowerCase().includes('exclusive')) {
     riskPoints.push({
       risk: '独家限制',
-      description: '合同包含独家条款，可能限制与其他方合作',
+      description: '合同包含独家合作条款，限制与其他竞争对手或供应商的合作，可能影响业务灵活性和发展机会',
       level: 'medium',
-      suggestion: '评估独家限制对业务的影响，考虑合作期限的合理性',
+      suggestion: '评估独家限制的必要性，争取缩短独家期限或设置例外情况。考虑在合同中明确独家范围的具体界限，避免过度限制。',
       confidence: 0.7,
-      related_clause: '独家合作条款'
+      related_clause: '独家合作条款',
+      legal_basis: '《反垄断法》第17条规定禁止具有市场支配地位的经营者没有正当理由搭售商品或限定交易相对人只能与其进行交易',
+      impact_level: '一般'
+    })
+  }
+  
+  // 添加更多类型的风险点
+  if (text.includes('保密') || text.toLowerCase().includes('confidential')) {
+    riskPoints.push({
+      risk: '保密义务过重',
+      description: '合同中的保密条款范围过广，保密期限过长，可能对正常业务交流造成限制',
+      level: 'medium',
+      suggestion: '明确保密信息的具体范围，设定合理的保密期限（通常为3-5年），区分商业秘密和一般信息。',
+      confidence: 0.65,
+      related_clause: '保密条款',
+      legal_basis: '《反不正当竞争法》第9条对商业秘密的保护规定',
+      impact_level: '轻微'
+    })
+  }
+  
+  if (text.match(/不可抗力|force majeure/)) {
+    riskPoints.push({
+      risk: '不可抗力定义不清',
+      description: '合同对不可抗力事件的定义不够明确，可能导致争议时难以适用',
+      level: 'medium',
+      suggestion: '明确列举不可抗力的具体情形，约定通知时限和证明责任，明确不可抗力后果的处理方式。',
+      confidence: 0.72,
+      related_clause: '不可抗力条款',
+      legal_basis: '《民法典》第180条和第590条关于不可抗力的规定',
+      impact_level: '一般'
+    })
+  }
+  
+  if (text.includes('保证金') || text.includes('押金')) {
+    riskPoints.push({
+      risk: '保证金风险',
+      description: '合同涉及保证金或押金支付，存在资金被长期占用或无法按时退还的风险',
+      level: 'high',
+      suggestion: '明确保证金金额、退还条件和时限，要求约定利息或违约金条款，定期检查保证金状态。',
+      confidence: 0.78,
+      related_clause: '保证金条款',
+      legal_basis: '《民法典》合同编关于定金和保证金的规定',
+      impact_level: '严重'
+    })
+  }
+  
+  if (text.includes('管辖') || text.includes('仲裁')) {
+    riskPoints.push({
+      risk: '争议解决不便',
+      description: '合同约定的管辖法院或仲裁机构距离较远，可能增加维权成本和时间',
+      level: 'medium',
+      suggestion: '争取约定在合同履行地或当事人一方所在地的法院管辖，或选择便捷的仲裁机构。',
+      confidence: 0.68,
+      related_clause: '争议解决条款',
+      legal_basis: '《民事诉讼法》关于地域管辖的规定',
+      impact_level: '轻微'
     })
   }
 
