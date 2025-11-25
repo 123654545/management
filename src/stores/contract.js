@@ -42,6 +42,14 @@ export const useContractStore = defineStore('contract', () => {
       // 添加到列表
       contracts.value.unshift(response)
       
+      // 上传成功后自动触发合同分析
+      if (response.id) {
+        // 不等待分析完成，避免阻塞用户体验
+        analyzeContract(response.id).catch(err => {
+          console.warn('自动分析触发失败:', err)
+        })
+      }
+      
       return response
     } catch (error) {
       throw error
@@ -68,6 +76,8 @@ export const useContractStore = defineStore('contract', () => {
       return { contract, analysis }
     } catch (error) {
       console.error('获取合同详情失败:', error) // 调试日志
+      // 即使出错，也设置默认的pending状态，避免前端显示错误
+      currentAnalysis.value = { analysis_status: 'pending' }
       throw error
     } finally {
       loading.value = false

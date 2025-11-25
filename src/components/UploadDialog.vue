@@ -31,7 +31,7 @@
                 <li><strong>Word 文档</strong> (.docx)</li>
               </ul>
               <div class="file-limit">
-                <el-icon><Warning /></el-icon>
+                <el-icon><WarningFilled /></el-icon>
                 文件大小限制：最大 20MB
               </div>
             </div>

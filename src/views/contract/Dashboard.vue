@@ -95,7 +95,7 @@
             >
               <div class="stats-content">
                 <div class="stats-icon">
-                  <el-icon size="32" color="#F56C6C"><Warning /></el-icon>
+                  <el-icon size="32" color="#F56C6C"><WarningFilled /></el-icon>
                 </div>
                 <div class="stats-info">
                   <div class="stats-number">{{ riskContractsCount }}</div>

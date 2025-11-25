@@ -46,7 +46,7 @@
             <div class="status-content">
               <el-icon size="48" class="status-icon">
                 <Loading v-if="analysisStatus === 'processing'" />
-                <Warning v-else />
+                <WarningFilled v-else />
               </el-icon>
               <div class="status-info">
                 <h3 v-if="analysisStatus === 'processing'">
@@ -126,7 +126,7 @@
               <el-card class="analysis-card">
                 <template #header>
                   <div class="card-header">
-                    <el-icon color="#F56C6C"><Warning /></el-icon>
+                    <el-icon color="#F56C6C"><WarningFilled /></el-icon>
                     <span>风险提示</span>
                   </div>
                 </template>
@@ -139,9 +139,9 @@
                   >
                     <div class="risk-header">
                       <el-icon>
-                        <WarningFilled v-if="risk.level === 'high'" />
-                        <Warning v-else />
-                      </el-icon>
+                          <WarningFilled v-if="risk.level === 'high'" />
+                          <WarningFilled v-else />
+                        </el-icon>
                       <span class="risk-type">{{ risk.risk }}</span>
                       <el-tag
                         :type="risk.level === 'high' ? 'danger' : 'warning'"
@@ -208,7 +208,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   ArrowLeft,
@@ -228,6 +228,8 @@ import { downloadFile, createDownloadLink } from '@/utils/file'
 import { exportToCalendar, generateCalendarFilename } from '@/utils/calendar'
 
 const route = useRoute()
+const router = useRouter()
+const contractId = computed(() => route.params.id)
 const contractStore = useContractStore()
 const { copyToClipboard } = useCopy()
 
@@ -241,21 +243,32 @@ const analysisStatus = computed(() => currentAnalysis.value?.analysis_status || 
 
 // 页面初始化
 onMounted(async () => {
-  const contractId = route.params.id
-  if (!contractId) {
-    console.error('合同ID未找到')
-    return
+  try {
+    await contractStore.getContract(contractId.value)
+    
+    // 如果分析状态为pending，自动触发分析
+    if (analysisStatus.value === 'pending') {
+      console.log('检测到待分析合同，自动触发分析...')
+      try {
+        await contractStore.analyzeContract(contractId.value)
+      } catch (error) {
+        console.error('自动分析失败:', error)
+        // 不抛出错误，避免影响页面显示
+      }
+    }
+  } catch (error) {
+    ElMessage.error('获取合同详情失败')
   }
-  await contractStore.getContract(contractId)
 })
 
 // 开始编辑标题
 const startEditTitle = () => {
-  editTitle.value = contractStore.currentContract?.title || ''
   editingTitle.value = true
+  editTitle.value = contractStore.currentContract?.title || ''
   nextTick(() => {
     titleInputRef.value?.focus()
   })
+  // 已在onMounted中获取合同，不需要重复获取
 }
 
 // 保存标题
@@ -328,7 +341,7 @@ const exportCalendar = async (dates) => {
   if (!contract) return
 
   try {
-    const blob = await exportCalendar(contract.title, dates, contract.id)
+    const blob = await exportToCalendar(contract.title, dates, contract.id)
     const filename = generateCalendarFilename(contract.title)
     createDownloadLink(blob, filename)
     ElMessage.success('日历文件已生成')

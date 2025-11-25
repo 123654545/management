@@ -1,6 +1,6 @@
 import express from 'express'
 import { authenticateToken } from '../middleware/auth.js'
-import { supabase } from '../config/database.js'
+import { supabase, supabaseAdmin } from '../config/database.js'
 import { deepseekAPI } from '../config/ai.js'
 import { 
   AppError, 
@@ -18,8 +18,8 @@ const router = express.Router()
 async function simulateAnalysis(text) {
   console.log('使用模拟AI分析...')
   
-  // 模拟分析延迟
-  await new Promise(resolve => setTimeout(resolve, 2000))
+  // 模拟分析延迟 - 优化为更快的响应时间
+  await new Promise(resolve => setTimeout(resolve, 500))
 
   // 模拟关键条款提取
   const keyTerms = []
@@ -242,7 +242,7 @@ async function checkAnalysisLimits(userId, contractId) {
   const { data: userAnalyses } = await supabase
     .from('contract_analyses')
     .select('id')
-    .eq('contract_id', contractId)
+    .eq('user_id', userId)
     .eq('analysis_status', 'processing')
     .limit(3)
 
@@ -327,18 +327,17 @@ router.post('/contract/:contractId/analyze', authenticateToken, asyncHandler(asy
   await checkAnalysisLimits(req.user.id, contractId)
 
   // 更新分析状态为处理中
-  const { error: updateError } = await supabase
+  const { error: updateError } = await supabaseAdmin
     .from('contract_analyses')
     .update({
       analysis_status: 'processing',
-      error_message: null,
-      started_at: new Date().toISOString(),
-      ai_model: 'pending'
+      error_message: null
     })
     .eq('contract_id', contractId)
 
   if (updateError) {
-    throw new AppError('更新分析状态失败', 500, 'STATUS_UPDATE_FAILED')
+      console.error('状态更新失败详情:', updateError)
+      throw new AppError(`更新分析状态失败: ${updateError.message}`, 500, 'STATUS_UPDATE_FAILED')
   }
 
   // 构建分析上下文
@@ -364,12 +363,10 @@ router.post('/contract/:contractId/analyze', authenticateToken, asyncHandler(asy
               risk_points: result.data.risk_points || [],
               key_dates: result.data.key_dates || [],
               analysis_status: 'completed',
-              analyzed_at: new Date().toISOString(),
-              completed_at: new Date().toISOString(),
               error_message: null
             }
 
-          const { error: saveError } = await supabase
+          const { error: saveError } = await supabaseAdmin
             .from('contract_analyses')
             .update(updateData)
             .eq('contract_id', contractId)
@@ -388,7 +385,7 @@ router.post('/contract/:contractId/analyze', authenticateToken, asyncHandler(asy
         console.error('处理分析结果失败:', saveError)
         
         // 更新状态为保存失败
-        await supabase
+        await supabaseAdmin
           .from('contract_analyses')
           .update({
             analysis_status: 'failed',
@@ -409,16 +406,9 @@ router.post('/contract/:contractId/analyze', authenticateToken, asyncHandler(asy
       const errorData = {
         analysis_status: 'failed',
         error_message: errorMessage,
-        completed_at: new Date().toISOString(),
-        analysis_time_ms: analysisTime,
-        error_details: {
-          code: analysisError.code,
-          stack: process.env.NODE_ENV === 'development' ? analysisError.stack : undefined,
-          circuit_state: deepseekCircuitBreaker.getState()
-        }
       }
 
-      await supabase
+      await supabaseAdmin
         .from('contract_analyses')
         .update(errorData)
         .eq('contract_id', contractId)
@@ -466,19 +456,14 @@ router.post('/contract/:contractId/retry', authenticateToken, async (req, res) =
     }
 
     // 重置分析状态
-    const { error: resetError } = await supabase
+    const { error: resetError } = await supabaseAdmin
       .from('contract_analyses')
       .update({
         analysis_status: 'pending',
         error_message: null,
         key_terms: [],
         risk_points: [],
-        key_dates: [],
-        summary: {},
-        started_at: null,
-        completed_at: null,
-        ai_model: null,
-        confidence_score: null
+        key_dates: []
       })
       .eq('contract_id', contractId)
 
@@ -511,7 +496,6 @@ router.get('/stats', authenticateToken, async (req, res) => {
       .select(`
         analysis_status,
         confidence_score,
-        ai_model,
         contracts!inner(user_id)
       `)
       .eq('contracts.user_id', req.user.id)
@@ -529,9 +513,9 @@ router.get('/stats', authenticateToken, async (req, res) => {
       processing: data.filter(item => item.analysis_status === 'processing').length,
       completed: data.filter(item => item.analysis_status === 'completed').length,
       failed: data.filter(item => item.analysis_status === 'failed').length,
+      // 暂时移除按模型统计，因为ai_model列不存在
       by_model: {
-        deepseek: data.filter(item => item.ai_model === 'deepseek').length,
-        simulate: data.filter(item => item.ai_model === 'simulate').length
+        total: data.length
       },
       avg_confidence: data
         .filter(item => item.confidence_score)
@@ -646,7 +630,6 @@ router.get('/failure-stats', authenticateToken, asyncHandler(async (req, res) =>
       analysis_status,
       error_message,
       analysis_method,
-      ai_model,
       completed_at,
       contracts!inner(user_id)
     `)
@@ -665,8 +648,7 @@ router.get('/failure-stats', authenticateToken, asyncHandler(async (req, res) =>
     if (!errorGroups[errorType]) {
       errorGroups[errorType] = {
         count: 0,
-        method: item.analysis_method || 'unknown',
-        model: item.ai_model || 'unknown'
+        method: item.analysis_method || 'unknown'
       }
     }
     errorGroups[errorType].count++

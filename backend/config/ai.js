@@ -1,5 +1,7 @@
 import axios from 'axios'
 import dotenv from 'dotenv'
+import http from 'http'
+import https from 'https'
 import { deepseekCircuitBreaker, deepseekRetryHandler, healthMonitor } from '../middleware/circuitBreaker.js'
 import { ExternalServiceError } from '../middleware/errorHandler.js'
 
@@ -28,9 +30,12 @@ export class DeepSeekAPI {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json'
       },
-      timeout: 30000, // 30秒超时
+      timeout: 15000, // 优化为15秒超时，避免长时间等待
       maxContentLength: 50 * 1024 * 1024, // 50MB最大响应
       maxBodyLength: 50 * 1024 * 1024, // 50MB最大请求
+      // 性能优化配置
+      httpAgent: new http.Agent({ keepAlive: true }),
+      httpsAgent: new https.Agent({ keepAlive: true })
     })
 
     // 请求拦截器
@@ -106,7 +111,7 @@ export class DeepSeekAPI {
       const prompt = this.buildAnalysisPrompt(text, contractTitle)
       
       const response = await this.client.post('/chat/completions', {
-        model: 'deepseek-chat',
+        model: 'deepseek-coder', // 使用更轻量的代码模型，分析速度更快
         messages: [
           {
             role: 'system',
@@ -117,9 +122,14 @@ export class DeepSeekAPI {
             content: prompt
           }
         ],
-        temperature: 0.1, // 低温度确保结果稳定
-        max_tokens: 3000,
-        stream: false
+        temperature: 0.1,
+        max_tokens: 2000, // 减少token数量，加快响应
+        frequency_penalty: 0,
+        presence_penalty: 0,
+        // 启用JSON格式输出，避免后续清理工作
+        response_format: {
+          type: "json_object"
+        }
       })
 
       if (!response.data?.choices?.[0]?.message?.content) {

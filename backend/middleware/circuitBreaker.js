@@ -380,9 +380,22 @@ export const deepseekCircuitBreaker = new CircuitBreaker({
 })
 
 export const deepseekRetryHandler = new RetryHandler({
-  maxRetries: 2,
-  baseDelay: 1000,
-  maxDelay: 5000
+  maxRetries: 1, // 减少重试次数，避免多次等待
+  baseDelay: 500, // 减少基础延迟
+  maxDelay: 2000, // 减少最大延迟
+  backoffMultiplier: 1.5, // 更平缓的退避乘数
+  retryableErrors: [
+    'ECONNRESET',
+    'ETIMEDOUT',
+    'ECONNREFUSED',
+    'EHOSTUNREACH',
+    'EPIPE',
+    'ENOTFOUND',
+    'ENETUNREACH',
+    'ECONNABORTED',
+    'ERR_HTTP_REQUEST_TIMEOUT',
+    'ERR_NETWORK'
+  ]
 })
 
 export const healthMonitor = new HealthMonitor()

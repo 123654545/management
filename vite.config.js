@@ -29,6 +29,11 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      // 确保所有API请求都经过代理
+      '/auth': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
       }
     }
   },
