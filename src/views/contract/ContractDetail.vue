@@ -69,9 +69,9 @@
 
         <!-- 分析结果 -->
         <div v-else class="analysis-results">
-          <el-row :gutter="20">
+          <el-row :gutter="24">
             <!-- 左侧：合同文本 -->
-            <el-col :span="12">
+            <el-col :span="16">
               <el-card class="text-card">
                 <template #header>
                   <div class="card-header">
@@ -92,7 +92,7 @@
             </el-col>
 
             <!-- 右侧：分析结果 -->
-            <el-col :span="12">
+            <el-col :span="8">
               <!-- 关键信息 -->
               <el-card class="analysis-card">
                 <template #header>
@@ -1100,7 +1100,7 @@ const getDatesForDay = (day) => {
 <style scoped>
 .contract-detail-container {
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f0fe 100%);
 }
 
 .detail-header {
@@ -1109,22 +1109,24 @@ const getDatesForDay = (day) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 32px;
+  height: 64px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .contract-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: #303133;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .title-input {
@@ -1132,7 +1134,7 @@ const getDatesForDay = (day) => {
 }
 
 .detail-main {
-  padding: 20px;
+  padding: 32px;
 }
 
 .detail-content {
@@ -1140,14 +1142,14 @@ const getDatesForDay = (day) => {
 }
 
 .analysis-status {
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 
 .status-content {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 40px 0;
+  gap: 24px;
+  padding: 48px 0;
   text-align: center;
 }
 
@@ -1179,24 +1181,85 @@ const getDatesForDay = (day) => {
 
 .analysis-results .analysis-card {
   margin-bottom: 20px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.analysis-card :deep(.el-card__body) {
+  padding: 18px;
+}
+
+/* 右侧分析区域优化 */
+.analysis-card :deep(.el-card__header) {
+  padding: 14px 18px;
+  min-height: 48px;
+}
+
+.analysis-card :deep(.el-descriptions__label) {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.analysis-card :deep(.el-descriptions__content) {
+  font-size: 13px !important;
+}
+
+/* 风险标题优化 */
+.risk-type {
+  font-size: 14px !important;
+  font-weight: 600;
+  color: #303133;
+  flex: 1;
+}
+
+.risk-description {
+  font-size: 13px !important;
+  margin: 0 0 10px 0;
+  color: #606266;
+  line-height: 1.4;
+}
+
+/* 日期项优化 */
+.date-item {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.date-left {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.analysis-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
 .card-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  border-bottom: 1px solid #e8f0fe;
 }
 
 .contract-text {
   max-height: 600px;
   overflow-y: auto;
-  line-height: 1.6;
+  line-height: 1.8;
   color: #606266;
   white-space: pre-wrap;
   word-break: break-word;
-  padding: 16px;
-  background-color: #fafafa;
-  border-radius: 4px;
+  padding: 24px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f8fafc 100%);
+  border-radius: 8px;
+  border: 1px solid #e8f0fe;
 }
 
 .term-value {
@@ -1208,19 +1271,26 @@ const getDatesForDay = (day) => {
 
 .risk-item {
   padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  border: 1px solid #e4e7ed;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.risk-item:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+  transform: translateY(-2px);
 }
 
 .risk-item.high {
-  background-color: #fef0f0;
-  border-color: #fbc4c4;
+  background: linear-gradient(135deg, #fef0f0 0%, #fde2e2 100%);
+  border-left: 4px solid #f56c6c;
 }
 
 .risk-item.medium {
-  background-color: #fdf6ec;
-  border-color: #f5dab1;
+  background: linear-gradient(135deg, #fdf6ec 0%, #fce8d2 100%);
+  border-left: 4px solid #e6a23c;
 }
 
 .risk-header {
@@ -1246,54 +1316,61 @@ const getDatesForDay = (day) => {
 .risk-overview {
   margin-bottom: 20px;
   padding: 16px;
-  background-color: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e4e7ed;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .risk-stat {
   text-align: center;
-  padding: 12px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
+  padding: 12px 8px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .risk-stat:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .risk-stat.high {
   background: linear-gradient(135deg, #fef0f0 0%, #fde2e2 100%);
-  border: 1px solid #fbc4c4;
+  border-left: 3px solid #f56c6c;
 }
 
 .risk-stat.medium {
   background: linear-gradient(135deg, #fdf6ec 0%, #fce8d2 100%);
-  border: 1px solid #f5dab1;
+  border-left: 3px solid #e6a23c;
 }
 
 .risk-stat.total {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
+  border-left: 3px solid #409eff;
 }
 
 .stat-number {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 4px;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .risk-stat.high .stat-number {
   color: #f56c6c;
+  text-shadow: 0 2px 4px rgba(245, 108, 108, 0.2);
 }
 
 .risk-stat.medium .stat-number {
   color: #e6a23c;
+  text-shadow: 0 2px 4px rgba(230, 162, 60, 0.2);
 }
 
 .risk-stat.total .stat-number {
   color: #409eff;
+  text-shadow: 0 2px 4px rgba(64, 158, 255, 0.2);
 }
 
 .stat-label {
@@ -1466,11 +1543,12 @@ const getDatesForDay = (day) => {
 
 /* 日期统计概览 */
 .date-overview {
-  margin-bottom: 20px;
-  padding: 16px;
-  background-color: #fafafa;
-  border-radius: 8px;
-  border: 1px solid #e4e7ed;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .date-stat {
@@ -1527,26 +1605,27 @@ const getDatesForDay = (day) => {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  transition: all 0.3s ease;
+  border: none;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .date-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+  transform: translateY(-2px);
 }
 
 .date-item.overdue {
-  border-color: #f56c6c;
-  background-color: #fef0f0;
+  background: linear-gradient(135deg, #fef0f0 0%, #fde2e2 100%);
+  border-left: 4px solid #f56c6c;
 }
 
 .date-item.today {
-  border-color: #409eff;
-  background-color: #ecf5ff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  background: linear-gradient(135deg, #ecf5ff 0%, #dbeafe 100%);
+  border-left: 4px solid #409eff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.3);
 }
 
 .date-item.important {
@@ -1676,14 +1755,115 @@ const getDatesForDay = (day) => {
 
 /* 快捷操作样式 */
 .date-shortcuts {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid #e4e7ed;
+  margin-top: 32px;
+  padding: 24px 20px 20px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 /* 对话框样式增强 */
 .el-dialog__body .el-form-item {
   margin-bottom: 18px;
+}
+
+/* 全局阴影优化 */
+.analysis-card,
+.risk-overview,
+.date-overview,
+.risk-item,
+.date-item,
+.risk-stat,
+.date-stat,
+.date-shortcuts {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 按钮样式优化 */
+.el-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.el-button--icon {
+  border-radius: 50%;
+}
+
+/* 标签样式优化 */
+.el-tag {
+  border-radius: 12px;
+  font-weight: 500;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* 输入框样式优化 */
+.el-input__wrapper {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.el-input__wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* 描述列表样式优化 */
+.el-descriptions {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* 下拉菜单样式优化 */
+.el-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border: none;
+  padding: 8px;
+}
+
+/* 时间轴样式优化 */
+.el-timeline-item__node {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .detail-main {
+    padding: 16px;
+  }
+  
+  .analysis-card {
+    margin-bottom: 16px;
+  }
+  
+  .risk-overview,
+  .date-overview {
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+  
+  .risk-item,
+  .date-item {
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .contract-title {
+    font-size: 18px;
+  }
+  
+  .stat-number {
+    font-size: 24px;
+  }
 }
 
 .date-item {
