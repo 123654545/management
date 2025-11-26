@@ -137,13 +137,22 @@
           <template #header>
             <div class="card-header">
               <span>合同管理</span>
-              <el-button
-                type="primary"
-                :icon="Upload"
-                @click="showUploadDialog = true"
-              >
-                上传合同
-              </el-button>
+              <div class="header-buttons">
+                <el-button
+                  type="success"
+                  :icon="Document"
+                  @click="$router.push('/templates')"
+                >
+                  模板库
+                </el-button>
+                <el-button
+                  type="primary"
+                  :icon="Upload"
+                  @click="showUploadDialog = true"
+                >
+                  上传合同
+                </el-button>
+              </div>
             </div>
             
             <!-- 筛选排序控件 -->
@@ -888,6 +897,11 @@ const handleUploadSuccess = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
 }
 
 .file-formats-notice {

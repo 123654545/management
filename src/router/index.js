@@ -53,6 +53,15 @@ const routes = [
     }
   },
   {
+    path: '/templates',
+    name: 'TemplateLibrary',
+    component: () => import('@/views/template/TemplateLibrary.vue'),
+    meta: {
+      title: '合同模板库',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/NotFound.vue'),

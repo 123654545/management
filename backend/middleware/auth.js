@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { supabase } from '../config/database.js'
+import { supabaseAdmin } from '../config/database.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
@@ -20,7 +20,7 @@ export const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET)
     
     // 验证用户是否存在于数据库
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('id', decoded.userId)
@@ -63,7 +63,7 @@ export const optionalAuth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, JWT_SECRET)
     
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('id', decoded.userId)

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url'
 import authRoutes from './routes/auth.js'
 import contractRoutes from './routes/contracts.js'
 import analysisRoutes from './routes/analysis.js'
+import templateRoutes from './routes/templates.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
 // 配置环境变量
@@ -60,6 +61,7 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes)
 app.use('/contracts', contractRoutes)
 app.use('/analysis', analysisRoutes)
+app.use('/templates', templateRoutes)
 
 // 404 处理
 app.use('*', (req, res) => {
