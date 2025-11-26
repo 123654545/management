@@ -59,7 +59,7 @@ router.post('/register', async (req, res) => {
     }
 
     // 检查邮箱是否已注册
-    const { data: existingUser, error: checkError } = await supabase
+    const { data: existingUser, error: checkError } = await supabaseAdmin
       .from('users')
       .select('email')
       .eq('email', email)
@@ -84,7 +84,7 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, saltRounds)
 
     // 创建用户
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .insert({
         email,
@@ -143,13 +143,13 @@ router.post('/login', async (req, res) => {
     }
 
     // 查找用户
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, email, password_hash')
       .eq('email', email)
       .maybeSingle()  // 使用 maybeSingle 避免用户不存在时的错误
 
-    if (error || !users) {
+    if (error || !user) {
       return res.status(401).json({
         success: false,
         message: '邮箱或密码错误'
@@ -210,7 +210,7 @@ router.get('/verify', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET)
     
     // 验证用户是否存在
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('id', decoded.userId)

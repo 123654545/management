@@ -17,12 +17,11 @@ export const useUserStore = defineStore('user', () => {
       loading.value = true
       const response = await authApi.login(email, password)
       
-      // 保存token
+      // 保存token和用户信息
       token.value = response.token
+      user.value = response.user
       localStorage.setItem('token', response.token)
-      
-      // 获取用户信息
-      await getUserInfo()
+      localStorage.setItem('user', JSON.stringify(response.user))
       
       return response
     } catch (error) {

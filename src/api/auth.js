@@ -6,12 +6,7 @@ export const authApi = {
     try {
       const response = await request.post('/auth/login', { email, password })
       
-      // 将用户信息和 token 存储到 localStorage
-      if (response.token) {
-        localStorage.setItem('token', response.token)
-        localStorage.setItem('user', JSON.stringify(response.user))
-      }
-      
+      // 直接返回响应数据，localStorage处理交给store层
       return response
     } catch (error) {
       throw error
@@ -27,12 +22,7 @@ export const authApi = {
         confirmPassword: password 
       })
       
-      // 将用户信息和 token 存储到 localStorage
-      if (response.token) {
-        localStorage.setItem('token', response.token)
-        localStorage.setItem('user', JSON.stringify(response.user))
-      }
-      
+      // 直接返回响应数据，localStorage处理交给store层
       return response
     } catch (error) {
       throw error
@@ -42,7 +32,9 @@ export const authApi = {
   // 获取用户信息 - 使用自定义后端
   getUserInfo: async () => {
     try {
-      return await request.get('/auth/verify')
+      const response = await request.get('/auth/verify')
+      // 响应拦截器提取了 data.data，所以 response 是 { user: {...} }
+      return response.user || response
     } catch (error) {
       throw error
     }
