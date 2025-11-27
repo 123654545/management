@@ -3,7 +3,7 @@ import multer from 'multer'
 import { authenticateToken } from '../middleware/auth.js'
 import { uploadSingle } from '../utils/fileUpload.js'
 import { extractText, getFileInfo } from '../utils/textExtraction.js'
-import { supabase, supabaseAdmin } from '../config/database.js'
+import { supabase, supabaseAdmin, supabaseSystem } from '../config/database.js'
 
 const router = express.Router()
 
@@ -145,7 +145,8 @@ router.post('/upload', authenticateToken, (req, res, next) => {
         title: Buffer.from(fileInfo.originalName.replace(/\.[^/.]+$/, ""), 'latin1').toString('utf8'),
         file_type: fileInfo.fileType,
         file_size: fileInfo.fileSize,
-        extracted_text: extractedText
+        extracted_text: extractedText,
+        parties: [] // 提供默认空数组值以满足非空约束
       })
       .select()
       .single()
@@ -163,9 +164,7 @@ router.post('/upload', authenticateToken, (req, res, next) => {
     const { error: analysisError } = await supabaseSystem
       .from('contract_analyses')
       .insert({
-        contract_id: contract.id,
-        analysis_status: extractedText ? 'pending' : 'failed',
-        error_message: extractedText ? null : '无法提取文件文本内容'
+        contract_id: contract.id
       })
 
     if (analysisError) {

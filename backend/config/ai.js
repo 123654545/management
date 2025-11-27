@@ -150,13 +150,29 @@ export class DeepSeekAPI {
         })
       )
       
+      // 验证结果格式
+      if (!result || !result.data) {
+        throw new ExternalServiceError('DeepSeek', '分析结果格式无效')
+      }
+      
       return result
     } catch (error) {
-      console.error('DeepSeek API 分析失败:', error)
+      console.error('DeepSeek API 分析失败:', {
+        message: error.message,
+        code: error.code,
+        response: error.response?.data,
+        operation: 'contract_analysis',
+        title: contractTitle.substring(0, 50) + '...'
+      })
       
-      // 转换为ExternalServiceError
+      // 转换为ExternalServiceError并添加更详细的错误信息
       if (!(error instanceof ExternalServiceError)) {
-        throw new ExternalServiceError('DeepSeek', error.message)
+        const handledError = this.handleAPIError(error)
+        throw new ExternalServiceError('DeepSeek', handledError.message, {
+          originalError: error,
+          errorCode: error.code,
+          httpStatus: error.response?.status
+        })
       }
       
       throw error
@@ -268,9 +284,30 @@ ${text}
       let cleanResponse = this.cleanJSONResponse(response)
       console.log('清理后的响应:', cleanResponse.substring(0, 500) + '...')
       
+      // 尝试直接解析JSON
       let parsed = JSON.parse(cleanResponse)
       
+      // 验证解析结果包含必要字段
+      if (!parsed.data && !parsed.key_terms && !parsed.risk_points) {
+        console.warn('DeepSeek API 响应缺少必要字段，尝试兼容模式解析')
+        // 兼容模式：如果顶层结构不包含data字段，尝试直接使用顶层字段
+        return {
+          success: true,
+          data: parsed,
+          metadata: {
+            model: 'deepseek-coder',
+            analyzed_at: new Date().toISOString(),
+            confidence: 0.8,
+            parsing_method: 'compatibility_mode'
+          }
+        }
+      }
+      
       // 尝试修复常见的结构问题
+      if (parsed.data) {
+        parsed = parsed.data // 提取data部分
+      }
+      
       if (!parsed.key_terms && parsed.key_terms) {
         parsed.key_terms = parsed.key_terms
       }
@@ -295,9 +332,10 @@ ${text}
         success: true,
         data: parsed,
         metadata: {
-          model: 'deepseek-chat',
+          model: 'deepseek-coder',
           analyzed_at: new Date().toISOString(),
-          confidence: this.calculateOverallConfidence(parsed)
+          confidence: this.calculateOverallConfidence(parsed),
+          parsing_method: 'standard'
         }
       }
     } catch (error) {
@@ -306,7 +344,14 @@ ${text}
       
       // 尝试使用更宽松的解析
       try {
-        return this.attemptLenientParse(response)
+        const lenientResult = this.attemptLenientParse(response)
+        lenientResult.metadata = {
+          ...lenientResult.metadata,
+          parsing_error: error.message,
+          fallback_reason: 'json_parsing_failed',
+          raw_response_preview: response.substring(0, 200)
+        }
+        return lenientResult
       } catch (lenientError) {
         throw new Error('AI响应解析失败: ' + error.message)
       }
@@ -314,30 +359,60 @@ ${text}
   }
 
   /**
-   * 清理JSON响应
+   * 清理JSON响应 - 更健壮的实现
    */
   cleanJSONResponse(response) {
     let cleaned = response
     
-    // 移除markdown标记
+    // 移除markdown标记和前后空白
     cleaned = cleaned
       .replace(/```json\s*/gi, '')
       .replace(/```\s*$/gi, '')
       .trim()
+    
+    // 移除可能的JSONP包装
+    cleaned = cleaned.replace(/^[^\{\[]*(\{\[)/, '$1')
+    cleaned = cleaned.replace(/(\}\])[^\}\]]*$/, '$1')
     
     // 修复常见的JSON格式问题
     // 1. 修复键名缺少引号的问题
     cleaned = cleaned.replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')
     
     // 2. 修复字符串值缺少引号的问题（更精确的匹配）
-    cleaned = cleaned.replace(/:\s*([^",\[\]\{\}\s][^",\[\]\{\}]*?)([,]\}])/g, ': "$1"$2')
+    cleaned = cleaned.replace(/:\s*([^",\[\]\{\}\s][^",\[\]\{\}]*?)([,]\}\])/g, ': "$1"$2')
     
     // 3. 移除尾部逗号
     cleaned = cleaned
       .replace(/,\s*}/g, '}')
       .replace(/,\s*]/g, ']')
     
-    // 4. 修复换行和空格问题  
+    // 尝试处理未闭合的字符串
+    try {
+      // 寻找未闭合的引号
+      let inString = false
+      let escaped = false
+      let lastQuoteIndex = -1
+      
+      for (let i = 0; i < cleaned.length; i++) {
+        if (cleaned[i] === '\\' && inString) {
+          escaped = !escaped
+        } else if (cleaned[i] === '"' && !escaped) {
+          inString = !inString
+          lastQuoteIndex = i
+        } else {
+          escaped = false
+        }
+      }
+      
+      // 如果字符串未闭合，尝试修复
+      if (inString && lastQuoteIndex > -1) {
+        cleaned = cleaned.substring(0, lastQuoteIndex + 1) + cleaned.substring(lastQuoteIndex + 1).replace(/["\\]/g, '')
+      }
+    } catch (e) {
+      console.warn('JSON字符串修复失败:', e.message)
+    }
+    
+    // 修复换行和空格问题  
     cleaned = cleaned.replace(/\r\n/g, '\\n').replace(/\n/g, '\\n')
     
     return cleaned
@@ -443,24 +518,34 @@ ${text}
 
       switch (status) {
         case 400:
-          return new Error('请求参数错误')
+          return new Error(`请求参数错误: ${data?.error?.message || '无效的请求格式'}`)
         case 401:
-          return new Error('API密钥无效或已过期')
+          return new Error('API密钥无效或已过期，请检查配置')
         case 403:
-          return new Error('API访问被拒绝，请检查权限')
+          return new Error('API访问被拒绝，权限不足')
+        case 408:
+          return new Error('请求超时，请检查网络连接')
         case 429:
-          return new Error('API调用频率过高，请稍后重试')
+          return new Error('API调用频率过高，已达到限制，请稍后重试')
         case 500:
-          return new Error('DeepSeek服务器内部错误')
+          return new Error('DeepSeek服务器内部错误，请稍后重试')
+        case 502:
+          return new Error('网关错误，请稍后重试')
         case 503:
-          return new Error('DeepSeek服务暂时不可用')
+          return new Error('DeepSeek服务暂时不可用，服务维护中')
+        case 504:
+          return new Error('服务器响应超时，请稍后重试')
         default:
-          return new Error(`API错误 (${status}): ${data?.error?.message || '未知错误'}`)
+          return new Error(`API错误 (状态码: ${status}): ${data?.error?.message || data?.message || '未知错误'}`)
       }
     } else if (error.code === 'ECONNABORTED') {
-      return new Error('请求超时，请稍后重试')
-    } else if (error.code === 'ENOTFOUND') {
-      return new Error('无法连接到DeepSeek服务器')
+      return new Error('请求超时，AI分析服务响应时间过长')
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      return new Error('无法连接到DeepSeek服务器，请检查网络连接和API地址')
+    } else if (error.code === 'ETIMEDOUT') {
+      return new Error('网络超时，请稍后重试')
+    } else if (error.name === 'TypeError') {
+      return new Error(`类型错误: ${error.message}`)
     } else {
       return new Error(`网络错误: ${error.message}`)
     }

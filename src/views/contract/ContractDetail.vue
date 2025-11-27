@@ -654,10 +654,39 @@ onMounted(async () => {
         await contractStore.analyzeContract(contractId.value)
       } catch (error) {
         console.error('自动分析失败:', error)
-        // 不抛出错误，避免影响页面显示
+        // 显示更详细的错误提示
+        let errorMessage = '自动分析暂时不可用'
+        
+        // 根据错误类型提供更具体的提示
+        if (error.response) {
+          switch(error.response.status) {
+            case 400:
+              errorMessage = '合同文本为空或格式不正确'
+              break
+            case 401:
+              errorMessage = '请重新登录后重试'
+              break
+            case 404:
+              errorMessage = '合同不存在'
+              break
+            case 429:
+              errorMessage = '分析请求过多，请稍后再试'
+              break
+            case 500:
+              errorMessage = '服务器内部错误'
+              break
+            default:
+              errorMessage = error.response.data?.message || errorMessage
+          }
+        } else if (error.request) {
+          errorMessage = '网络连接失败，请检查API服务是否正常运行'
+        }
+        
+        ElMessage.warning(`${errorMessage}，您可以稍后点击"重新分析"按钮重试`)
       }
     }
   } catch (error) {
+    console.error('获取合同详情失败:', error)
     ElMessage.error('获取合同详情失败')
   }
 })

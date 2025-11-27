@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { contractApi } from '@/api/contract'
 
 export const useContractStore = defineStore('contract', () => {
@@ -67,22 +68,29 @@ export const useContractStore = defineStore('contract', () => {
   const getContract = async (id) => {
     try {
       loading.value = true
-
       
-      const [contract, analysis] = await Promise.all([
-        contractApi.getContract(id),
-        contractApi.getContractAnalysis(id)
-      ])
-      
-
-      
+      // 首先获取合同基本信息
+      const contract = await contractApi.getContract(id)
       currentContract.value = contract
-      currentAnalysis.value = analysis
       
-      return { contract, analysis }
+      // 然后尝试获取分析数据，但即使失败也不影响合同详情显示
+      try {
+        const analysis = await contractApi.getContractAnalysis(id)
+        currentAnalysis.value = analysis
+      } catch (analysisError) {
+        console.warn('获取合同分析数据失败，将显示默认状态:', analysisError.message)
+        // 设置默认分析状态，而不是错误状态
+        currentAnalysis.value = { 
+          analysis_status: 'pending',
+          message: '分析数据暂不可用'
+        }
+      }
+      
+      return { contract, analysis: currentAnalysis.value }
     } catch (error) {
-      console.error('获取合同详情失败:', error) // 调试日志
-      // 即使出错，也设置默认的pending状态，避免前端显示错误
+      console.error('获取合同详情失败:', error)
+      // 合同基本信息获取失败才清空当前合同
+      currentContract.value = null
       currentAnalysis.value = { analysis_status: 'pending' }
       throw error
     } finally {

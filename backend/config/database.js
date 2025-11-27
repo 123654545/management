@@ -23,15 +23,18 @@ export const supabase = createClient(supabaseUrl, process.env.SUPABASE_ANON_KEY,
   }
 })
 
-// 管理员客户端（绕过RLS，用于系统操作）
-export const supabaseSystem = createClient(supabaseUrl, supabaseServiceKey, {
+// 系统客户端（使用服务角色密钥绕过RLS，用于系统操作）
+// 确保使用服务角色密钥，而不是匿名密钥
+export const supabaseSystem = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
   },
   global: {
     headers: {
-      'X-Client-Info': 'supabase-js/2.0.0'
+      'X-Client-Info': 'supabase-js/2.0.0',
+      // 显式指定使用服务角色密钥
+      'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_KEY}`
     }
   }
 })
