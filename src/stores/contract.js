@@ -28,7 +28,13 @@ export const useContractStore = defineStore('contract', () => {
       contracts.value = response.contracts || []
       return response
     } catch (error) {
-      throw error
+      console.error('获取合同列表失败:', error)
+      // 如果是认证错误，直接抛出，由路由守卫处理
+      if (error.response?.status === 401) {
+        throw error
+      }
+      // 其他错误显示友好提示
+      throw new Error('获取合同列表失败，请检查网络连接')
     } finally {
       loading.value = false
     }

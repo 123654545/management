@@ -12,19 +12,12 @@ const router = express.Router()
  */
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { page = 1, limit = 10, sortBy = 'uploaded_at', sortOrder = 'desc' } = req.query
+    const { page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'desc' } = req.query
 
+    // 先检查表是否存在以及字段结构
     const { data: contracts, error } = await supabaseAdmin
       .from('contracts')
-      .select(`
-        *,
-        contract_analyses (
-          analysis_status,
-          key_terms,
-          risk_points,
-          key_dates
-        )
-      `)
+      .select('id, title, file_name, status, created_at, user_id')
       .eq('user_id', req.user.id)
       .order(sortBy, { ascending: sortOrder === 'asc' })
       .range((page - 1) * limit, page * limit - 1)
@@ -39,7 +32,7 @@ router.get('/', authenticateToken, async (req, res) => {
     // 获取总数
     const { count } = await supabaseAdmin
       .from('contracts')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', req.user.id)
 
     res.json({
@@ -70,7 +63,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
 
-    const { data: contract, error } = await supabase
+    const { data: contract, error } = await supabaseSystem
       .from('contracts')
       .select(`
         *,
@@ -167,7 +160,7 @@ router.post('/upload', authenticateToken, (req, res, next) => {
     }
 
     // 创建分析记录
-    const { error: analysisError } = await supabaseAdmin
+    const { error: analysisError } = await supabaseSystem
       .from('contract_analyses')
       .insert({
         contract_id: contract.id,
@@ -201,7 +194,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params
     const { title } = req.body
 
-    const { data: contract, error } = await supabase
+    const { data: contract, error } = await supabaseSystem
       .from('contracts')
       .update({
         title,
@@ -299,7 +292,7 @@ router.get('/:id/download', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params
 
-    const { data: contract, error } = await supabase
+    const { data: contract, error } = await supabaseSystem
       .from('contracts')
       .select('file_name, file_url')
       .eq('id', id)

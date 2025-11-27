@@ -7,22 +7,11 @@ dotenv.config()
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 
-// 管理员客户端（绕过RLS）
+// 管理员客户端（使用服务角色密钥或匿名密钥）
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
-  },
-  db: {
-    schema: 'public'
-  },
-  global: {
-    headers: {
-      'Authorization': `Bearer ${supabaseServiceKey}`,
-      'apikey': supabaseServiceKey,
-      'Content-Type': 'application/json; charset=utf-8',
-      'Accept': 'application/json; charset=utf-8'
-    }
   }
 })
 
@@ -31,6 +20,19 @@ export const supabase = createClient(supabaseUrl, process.env.SUPABASE_ANON_KEY,
   auth: {
     autoRefreshToken: false,
     persistSession: false
+  }
+})
+
+// 管理员客户端（绕过RLS，用于系统操作）
+export const supabaseSystem = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'supabase-js/2.0.0'
+    }
   }
 })
 

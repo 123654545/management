@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>前端配置测试</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f7fa;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .status { 
+      padding: 8px 16px; 
+      border-radius: 4px; 
+      margin: 4px 0;
+      display: inline-block;
+    }
+    .ok { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+    .warning { background: #fff3cd; color: #856404; }
+    button {
+      background: #409eff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #66b1ff; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>🔍 智能合同管理系统 - 前端配置测试</h1>
+  
+  <div class="card">
+    <h2>📋 环境变量检查</h2>
+    <div id="env-check"></div>
+  </div>
+
+  <div class="card">
+    <h2>🌐 API 连接测试</h2>
+    <button onclick="testBackendConnection()">测试后端连接</button>
+    <div id="api-result" class="hidden"></div>
+  </div>
+
+  <div class="card">
+    <h2>🗄️ Supabase 连接测试</h2>
+    <button onclick="testSupabaseConnection()">测试 Supabase 连接</button>
+    <div id="supabase-result" class="hidden"></div>
+  </div>
+
+  <div class="card">
+    <h2>📦 依赖检查</h2>
+    <div id="deps-check"></div>
+  </div>
+
+  <script type="module">
+    // 检查环境变量
+    function checkEnvironmentVariables() {
+      const container = document.getElementById('env-check');
+      const envVars = [
+        { name: 'VITE_SUPABASE_URL', required: true },
+        { name: 'VITE_SUPABASE_ANON_KEY', required: true },
+        { name: 'VITE_API_BASE_URL', required: true },
+        { name: 'VITE_APP_TITLE', required: false },
+        { name: 'VITE_ENABLE_AI_ANALYSIS', required: false },
+        { name: 'VITE_DEBUG', required: false }
+      ];
+
+      let html = '';
+      envVars.forEach(({ name, required }) => {
+        const value = import.meta.env[name];
+        const isSet = !!value && !value.includes('YOUR_') && !value.includes('your_');
+        const status = isSet ? 'ok' : (required ? 'error' : 'warning');
+        const statusText = isSet ? '✅ 已配置' : (required ? '❌ 未配置' : '⚠️ 使用默认值');
+        
+        html += `<div class="status ${status}"><strong>${name}:</strong> ${statusText}</div>`;
+        if (isSet && required) {
+          html += `<small style="color: #666;">值: ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}</small><br>`;
+        }
+      });
+
+      container.innerHTML = html;
+    }
+
+    // 测试后端连接
+    window.testBackendConnection = async function() {
+      const resultDiv = document.getElementById('api-result');
+      resultDiv.className = '';
+      resultDiv.innerHTML = '<div class="status warning">🔄 正在测试后端连接...</div>';
+      resultDiv.classList.remove('hidden');
+
+      try {
+        const response = await fetch('/api/health');
+        if (response.ok) {
+          const data = await response.json();
+          resultDiv.innerHTML = `<div class="status ok">✅ 后端连接成功</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        } else {
+          resultDiv.innerHTML = `<div class="status error">❌ 后端连接失败 (${response.status})</div>`;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="status error">❌ 后端连接失败: ${error.message}</div>`;
+      }
+    };
+
+    // 测试 Supabase 连接
+    window.testSupabaseConnection = async function() {
+      const resultDiv = document.getElementById('supabase-result');
+      resultDiv.className = '';
+      resultDiv.innerHTML = '<div class="status warning">🔄 正在测试 Supabase 连接...</div>';
+      resultDiv.classList.remove('hidden');
+
+      try {
+        // 动态导入 Supabase 客户端
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+        
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('YOUR_') || supabaseAnonKey.includes('YOUR_')) {
+          throw new Error('Supabase 配置不完整');
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        const { data, error } = await supabase.from('users').select('count').limit(1);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        resultDiv.innerHTML = `<div class="status ok">✅ Supabase 连接成功</div><pre>数据库响应正常</pre>`;
+      } catch (error) {
+        resultDiv.innerHTML = `<div class="status error">❌ Supabase 连接失败: ${error.message}</div>`;
+      }
+    };
+
+    // 检查依赖
+    function checkDependencies() {
+      const container = document.getElementById('deps-check');
+      const deps = [
+        { name: 'Vue', check: () => typeof window.Vue !== 'undefined' || import.meta.env.DEV },
+        { name: 'Element Plus', check: () => import.meta.env.DEV }, // 开发环境检查
+        { name: 'Axios', check: () => import.meta.env.DEV },
+        { name: 'Supabase', check: () => import.meta.env.DEV }
+      ];
+
+      let html = '';
+      deps.forEach(({ name, check }) => {
+        const isAvailable = check();
+        const status = isAvailable ? 'ok' : 'warning';
+        const statusText = isAvailable ? '✅ 可用' : '⚠️ 需要验证';
+        html += `<div class="status ${status}"><strong>${name}:</strong> ${statusText}</div>`;
+      });
+
+      html += '<br><small style="color: #666;">注意: 依赖检查在开发环境中进行，实际依赖由构建工具管理</small>';
+      container.innerHTML = html;
+    }
+
+    // 运行所有检查
+    function runAllChecks() {
+      checkEnvironmentVariables();
+      checkDependencies();
+    }
+
+    // 页面加载完成后运行检查
+    document.addEventListener('DOMContentLoaded', runAllChecks);
+  </script>
+</body>
+</html>

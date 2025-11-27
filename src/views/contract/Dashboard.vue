@@ -567,7 +567,17 @@ const getAnalysisStatus = (contractId) => {
 
 // 页面初始化
 onMounted(async () => {
-  await contractStore.fetchContracts()
+  try {
+    await contractStore.fetchContracts()
+  } catch (error) {
+    console.error('加载合同列表失败:', error)
+    // 如果是认证错误，由路由守卫处理重定向
+    if (error.response?.status === 401) {
+      console.log('认证失败，将由路由守卫处理重定向')
+    } else {
+      ElMessage.error('加载合同列表失败，请稍后重试')
+    }
+  }
 })
 
 // 处理用户菜单命令

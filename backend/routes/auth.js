@@ -63,16 +63,20 @@ router.post('/register', async (req, res) => {
       .from('users')
       .select('email')
       .eq('email', email)
-      .maybeSingle()  // 使用 maybeSingle 避免用户不存在时的错误
+      .limit(1)
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    console.log('检查邮箱结果:', { existingUser, checkError })
+
+    if (checkError) {
+      console.error('数据库查询错误:', checkError)
       return res.status(500).json({
         success: false,
-        message: '检查邮箱时出错'
+        message: '数据库查询失败',
+        error: checkError.message
       })
     }
 
-    if (existingUser) {
+    if (existingUser && existingUser.length > 0) {
       return res.status(400).json({
         success: false,
         message: '该邮箱已被注册'
@@ -84,6 +88,8 @@ router.post('/register', async (req, res) => {
     const passwordHash = await bcrypt.hash(password, saltRounds)
 
     // 创建用户
+    console.log('创建用户数据:', { email, passwordHash })
+    
     const { data: user, error } = await supabaseAdmin
       .from('users')
       .insert({
@@ -93,10 +99,14 @@ router.post('/register', async (req, res) => {
       .select()
       .single()
 
+    console.log('创建用户结果:', { user, error })
+
     if (error) {
+      console.error('创建用户失败:', error)
       return res.status(500).json({
         success: false,
-        message: '注册失败，请稍后重试'
+        message: '注册失败，请稍后重试',
+        details: error.message
       })
     }
 
@@ -338,7 +348,7 @@ router.post('/reset-password', async (req, res) => {
     // 更新密码
     const { error } = await supabaseAdmin
       .from('users')
-      .update({ password: hashedPassword })
+      .update({ password_hash: hashedPassword })
       .eq('id', decoded.userId)
     
     if (error) {
