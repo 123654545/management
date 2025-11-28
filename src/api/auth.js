@@ -33,8 +33,12 @@ export const authApi = {
   getUserInfo: async () => {
     try {
       const response = await request.get('/auth/verify')
-      // 响应拦截器提取了 data.data，所以 response 是 { user: {...} }
-      return response.user || response
+      // 根据修改后的响应拦截器，直接返回响应数据
+      // 确保返回的是用户对象
+      if (response && response.user) {
+        return response.user
+      }
+      return response
     } catch (error) {
       throw error
     }

@@ -18,13 +18,22 @@ export const useUserStore = defineStore('user', () => {
       const response = await authApi.login(email, password)
       
       // 保存token和用户信息
-      token.value = response.token
-      user.value = response.user
-      localStorage.setItem('token', response.token)
-      localStorage.setItem('user', JSON.stringify(response.user))
+      // 检查response结构，处理可能的嵌套情况
+      const tokenValue = response.token || (response.data && response.data.token)
+      const userValue = response.user || (response.data && response.data.user)
+      
+      if (!tokenValue || !userValue) {
+        throw new Error('无效的响应格式')
+      }
+      
+      token.value = tokenValue
+      user.value = userValue
+      localStorage.setItem('token', tokenValue)
+      localStorage.setItem('user', JSON.stringify(userValue))
       
       return response
     } catch (error) {
+      console.error('登录失败:', error)
       throw error
     } finally {
       loading.value = false
@@ -33,7 +42,6 @@ export const useUserStore = defineStore('user', () => {
 
   const register = async (email, password) => {
     try {
-      loading.value = true
       const response = await authApi.register(email, password)
       return response
     } catch (error) {

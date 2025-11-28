@@ -32,14 +32,27 @@ request.interceptors.response.use(
   (response) => {
     const { data } = response
     
-    // 检查响应格式
-    if (!data.success) {
-      ElMessage.error(data.message || '请求失败')
-      return Promise.reject(new Error(data.message || '请求失败'))
+    // 对于2xx响应，我们默认它是成功的
+    // 处理可能的响应格式差异
+    if (typeof data === 'object' && data !== null) {
+      // 如果有success字段且为false，则认为请求失败
+      if ('success' in data && !data.success) {
+        ElMessage.error(data.message || '请求失败')
+        return Promise.reject(new Error(data.message || '请求失败'))
+      }
+      
+      // 根据不同的API格式返回合适的数据
+      // 兼容常见的响应格式
+      if (data.data) {
+        return data.data
+      } else if (data.token || data.user) {
+        // 对于认证相关响应，保留原始结构
+        return data
+      }
     }
     
-    // 如果有 data 字段，返回 data.data，否则返回整个 data
-    return data.data || data
+    // 返回原始响应数据
+    return data
   },
   (error) => {
     // 处理网络错误
